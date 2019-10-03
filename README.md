@@ -1,10 +1,10 @@
 # ratemate
 
-There's a bunch of python rate limiting modules out there (ratelim, ratelimit etc), but they all seem to suffer from similar problems:
+There's a bunch of python rate limiting modules out there, but they all seem to suffer from similar problems:
 
 - Weird APIs, usually inflexible decorators that you need to wrap your calls in
 - Lack of `multiprocessing` support (eg, two processes will be unaware of each other, and thus double the intended rate)
-- Unnecessary coupling to other libraries, eg `requests`
+- Unnecessary coupling to other libraries
 
 `ratemate`, meanwhile, gives you a simple `RateLimit` object that avoids all these problems.
 
@@ -35,16 +35,7 @@ with ThreadPoolExecutor() as executor:
         print('completed')
 ```
 
-Add rate-limiting simply by adding a wait at the appropriate time, either on task creation:
-
-```python
-def task(n):
-    waited_time = rate_limit.wait()  # wait at start of task
-    print(f"  task {n}: waited for {waited_time} secs")
-    return n
-```
-
-Or at the start of the task itself:
+Add rate-limiting simply by adding a wait at the appropriate time, either at task creation:
 
 ```python
 for i in range(20):
@@ -53,7 +44,16 @@ for i in range(20):
     futures.append(future)
 ```
 
-Because `ratemate` uses multi-process-aware shared memory to track its state, you can also use `ProcessPoolExecutor` and everything will still work nicely. 
+Or at the start of the task itself:
+
+```python
+def task(n):
+    waited_time = rate_limit.wait()  # wait at start of task
+    print(f"  task {n}: waited for {waited_time} secs")
+    return n
+```
+
+Because `ratemate` uses multi-process-aware shared memory to track its state, you can also use `ProcessPoolExecutor` and everything will still work nicely.
 
 
 ## Greedy mode
@@ -65,3 +65,8 @@ You may instead wish for calls to happen as fast as possible, only slowing down 
 ```
 rate_limit = RateLimit(max_count=20, per=60, greedy=True)
 ```
+
+## Further enhancements
+
+Rate limit coordination between truly independent processes (not just subprocesses), possibly using Python 3.8's new shared memory, or a database.
+

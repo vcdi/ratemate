@@ -39,3 +39,5 @@ nosetests.xml
 .cache
 
 poetry.lock
+
+pip-wheel-metadata

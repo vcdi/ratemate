@@ -35,56 +35,83 @@ class RateLimit:
     def sleep(self, secs):
         time.sleep(secs)
 
+    @property
     def count(self):
         return self._count.value
 
+    @count.setter
+    def count(self, value):
+        self._count.value = value
+
+    @property
+    def batch_count(self):
+        return self._batch_count.value
+
+    @batch_count.setter
+    def batch_count(self, value):
+        self._batch_count.value = value
+
+    @property
+    def dt_previous_call(self):
+        prev_call_unix = self._t_last_call.value
+
+        if prev_call_unix:
+            return datetime.fromtimestamp(prev_call_unix)
+
+    @dt_previous_call.setter
+    def dt_previous_call(self, value):
+        self._t_last_call.value = value
+
+    def is_first_call(self):
+        return self.count == 0
+
+    def wait_until(self, dt_wait_until):
+        wait_interval = dt_wait_until - datetime.utcnow()
+        wait_secs = wait_interval.total_seconds()
+
+        if wait_secs > 0:
+            self.sleep(wait_secs)
+            return wait_secs
+        return 0.0
+
+    @property
+    def dt_batch_start(self):
+        _dt_batch_start = self._t_batch_start.value
+
+        if _dt_batch_start:
+            return datetime.fromtimestamp(_dt_batch_start)
+
+    @dt_batch_start.setter
+    def dt_batch_start(self, value):
+        self._t_batch_start.value = value
+
     def wait(self):
         with self._count.get_lock(), self._t_last_call.get_lock(), self._t_batch_start.get_lock(), self._batch_count.get_lock():
-            prev_call_unix = self._t_last_call.value
 
-            if prev_call_unix:
-                t_prev_call = datetime.fromtimestamp(prev_call_unix)
-            else:
-                t_prev_call = None
-
-            prev_count = self._count.value
-
-            new_count = prev_count + 1
-            self._count.value = new_count
+            dt_previous_call = self.dt_previous_call
 
             wait_secs = 0.0
 
-            if prev_count > 0:
-                wait_until = None
-
+            if not self.is_first_call():
                 if self.greedy:
-                    batch_count = self._batch_count.value
-                    new_batch_count = batch_count + 1
+                    self.batch_count += 1
 
-                    if new_batch_count >= self.max_count:
-                        new_batch_count = 0
+                    if self.batch_count >= self.max_count:
+                        self.batch_count = 0
 
-                        t_batch_start = self._t_batch_start.value
-                        t_batch_start = datetime.fromtimestamp(t_batch_start)
-                        wait_until = t_batch_start + timedelta(seconds=self.per)
-
-                    self._batch_count.value = new_batch_count
+                        dt_wait_until = self.dt_batch_start + self.per_timedelta
+                        wait_secs = self.wait_until(dt_wait_until)
                 else:
-                    wait_until = t_prev_call + timedelta(seconds=self.min_interval)
+                    dt_wait_until = dt_previous_call + self.min_interval_timedelta
+                    wait_secs = self.wait_until(dt_wait_until)
 
-                if wait_until is not None:
-                    wait_interval = wait_until - datetime.utcnow()
-                    wait_secs = wait_interval.total_seconds()
+            self.count += 1
 
-                    if wait_secs > 0:
-                        self.sleep(wait_secs)
+            now_timestamp = datetime.utcnow().timestamp()
 
-            self._t_last_call.value = datetime.utcnow().timestamp()
+            self.dt_previous_call = now_timestamp
 
-            if self.greedy:
-                batch_start_unset = self._t_batch_start.value is None
-                new_batch_started = self._batch_count.value == 0
+            if self.greedy and self.batch_count:
+                self.dt_batch_start = now_timestamp
 
-                if batch_start_unset or new_batch_started:
-                    self._t_batch_start.value = self._t_last_call.value
             return wait_secs

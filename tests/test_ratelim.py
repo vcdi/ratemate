@@ -2,8 +2,8 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 
 from ratemate import RateLimit
 
-rate_limit = RateLimit(max_count=10, per=1, greedy=False)
-rate_limit_greedy = RateLimit(max_count=10, per=1, greedy=True)
+rate_limit = RateLimit(max_count=10, per=5, greedy=False)
+rate_limit_greedy = RateLimit(max_count=3, per=2, greedy=True)
 
 
 def task(n):
@@ -41,7 +41,7 @@ def test_ratelim_concurrent():
             result = completed.result()
             print(f"completed: {result}")
 
-    assert rate_limit.count() == 20
+    assert rate_limit.count == 20
 
 
 def test_ratelim_greedy():
@@ -56,4 +56,4 @@ def test_ratelim_greedy():
             result = completed.result()
             print(f"completed: {result}")
 
-    assert rate_limit_greedy.count() == 20
+    assert rate_limit_greedy.count == 20
