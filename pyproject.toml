@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "ratemate"
+version = "0.1.0"
+description = "A python rate limiter module with multi-process support and a simple, intuitive API"
+authors = ["Robert Lechte <robert.lechte@dpc.vic.gov.au>"]
+readme = 'README.md'
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+isort = "*"
+flake8 = "*"
+pytest-cov = "*"
+black = {python=">3.6", version=">=18.9b0", allow_prereleases=true}
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+line_length = 88
