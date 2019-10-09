@@ -19,6 +19,10 @@ Then call `.wait()` appropriately when you need to limit the rate.
 For instance, here's an example when creating multiple threads with `concurrent.futures`. First the original rate-unlimited code:
 
 ```python
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
 def task(n):
     print(f"  task {n} called")
     return n
@@ -68,5 +72,5 @@ rate_limit = RateLimit(max_count=20, per=60, greedy=True)
 
 ## Further enhancements
 
-Rate limit coordination between truly independent processes (not just subprocesses), possibly using Python 3.8's new shared memory, or a database.
+Rate limit coordination between truly independent processes (not just subprocesses), possibly using Python 3.8's new shared memory or Redis or PostgreSQL or whatever.
 
